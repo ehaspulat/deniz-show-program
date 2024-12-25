@@ -1,95 +1,189 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from "react";
 import styles from "./page.module.css";
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+interface Question {
+	question: string;
+	answer: string;
+	answerVisible: boolean;
+}
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+const initialQuestions: {[key: string]: Question} = {
+	'soru1': {
+		question: '1+1',
+		answer: '2',
+		answerVisible: false
+	},
+	'soru2': {
+		question: '100+100',
+		answer: '200',
+		answerVisible: false
+	}
+};
+
+export default function Home() {
+	const [questions, setQuestions] = useState<{[key: string]: Question}>(initialQuestions);
+
+	const handleAddQuestion = (question: Question) => {
+		setQuestions({
+			...questions,
+			["soru" + Object.values(questions).length+1]: {
+				question: question.question,
+				answer: question.answer,
+				answerVisible: question.answerVisible
+			}
+		})
+	}
+
+	return (
+		<div>
+			{
+				Object.entries(questions).map(([key, question]) => {
+					return (
+						<QuestionView
+							key={key}
+							id={key}
+							question={question.question}
+							answer={question.answer}
+							answerVisible={question.answerVisible}
+							onToggleShow={
+								() => {
+									setQuestions(
+										{
+											...questions,
+											[key]: {
+												...questions[key],
+												answerVisible: !questions[key].answerVisible
+											}
+										}
+									);
+								}
+							}
+							onDelete={
+								(id: string) => {
+									setQuestions((prevQuestions) => {
+										const updatedQuestions = { ...prevQuestions };
+										delete updatedQuestions[id];
+										return updatedQuestions;
+									}
+								);
+								}
+							}
+						>
+						</QuestionView>
+					)
+				})
+			}
+			<NewQuestionView 
+				onAddQuestion={handleAddQuestion}
+			/>
+		</div>
+	);
+}
+
+interface QuestionViewProps {
+	id: string;
+	question: string;
+	answer: string;
+	answerVisible: boolean;
+	onToggleShow: () => void;
+	onDelete: (id: string) => void;
+}
+
+function QuestionView(props: QuestionViewProps) {
+
+	const handleAnswerToggle = () => {
+		props.onToggleShow();
+	}
+
+	const handleDeleteClick = () => {
+		props.onDelete(props.id);
+	}
+
+	return (
+		<div className={styles.question}>
+			<div className={styles.deletePart}>
+				<button
+					onClick={handleDeleteClick}
+				>
+					DELETE
+				</button>
+			</div>
+			<div className={styles.questionPart}>
+				{props.question}
+			</div>
+
+			<div className={styles.answerPart}>
+				<div className={styles.showButtonPart}>
+					<button
+						onClick={handleAnswerToggle}
+						>
+							{props.answerVisible ? "HIDE" : "SHOW"}
+					</button>
+				</div>
+				{
+					props.answerVisible ? props.answer : <></>
+				}
+			</div>
+		</div>
+	)
+}
+
+interface NewQuestionViewProps {
+	onAddQuestion: (question: Question) => void;
+}
+
+function NewQuestionView(props: NewQuestionViewProps) {
+	const [question, setQuestion] = useState<string>("");
+	const [answer, setAnswer] = useState<string>("");
+
+	const handleAddQuestionClick = () => {
+		props.onAddQuestion({
+			question: question,
+			answer: answer,
+			answerVisible: false
+		});
+
+		setQuestion("");
+		setAnswer("");
+	}
+
+
+
+	return (
+		<div className={styles.newQuestion}>
+			<div className={styles.newQuestionQuestionPart}>
+				<div style={{
+					width: "15rem"
+				}}>
+					Question:
+				</div>
+				<input 
+					type="text" 
+					onChange={(e) => setQuestion(e.currentTarget.value)}
+					style={{
+						width: "30rem"
+					}}
+				/>
+			</div>
+			<div className={styles.newQuestionAnswerPart}>
+				<div style={{
+					width: "15rem"
+				}}>
+					Answer:
+				</div>
+				<input 
+					type="text" 
+					onChange={(e) => setAnswer(e.currentTarget.value)}
+					style={{
+						width: "30rem"
+					}}
+				/>
+			</div>
+			<button
+				onClick={handleAddQuestionClick}
+			>ADD</button>
+		</div>
+	)
 }
